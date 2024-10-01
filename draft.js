@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import ArtToolItem from './ArtToolItem';
 
 const Home = ({ navigation }) => {
@@ -12,12 +12,18 @@ const Home = ({ navigation }) => {
       const response = await fetch('https://66e99bdc87e41760944a27ed.mockapi.io/api/artTools/item');
       const json = await response.json();
       console.log("Data fetch: ", json)
-      setArtTools(json); 
-      
+
+      if (Array.isArray(json)) {
+        setArtTools(json); // Set data if it's an array
+      } else if (json && typeof json === 'object') {
+        setArtTools([json]); // Convert to an array if it's an object
+      } else {
+        setArtTools([]); // Set an empty array if the response is neither an array nor an object
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Loi fetch: ", error);
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -28,7 +34,7 @@ const Home = ({ navigation }) => {
   return (
     <FlatList
       data={artTools}
-      keyExtractor={item => item.id}
+      keyExtractor={item => item.id.toString()}
       renderItem={({ item }) => (
         <View>
           <Text>{item.id}</Text>
