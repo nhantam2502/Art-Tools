@@ -17,16 +17,17 @@ export default function App() {
       <Stack.Screen
         name="HomePage"
         component={Home}
-        options={{
-          headerShown: false
-        }}
+        options={() => ({
+          headerShown: true, // Show header on the HomePage
+        })}
       />
-      {/* 
       <Stack.Screen
         name="ArtToolItemDetail"
         component={ArtToolItem}
-        options={{ title: 'Art Tool Details' }}
-      /> */}
+        options={() => ({
+          headerShown: false, // Hide header on the detail page
+        })}
+      />
     </Stack.Navigator>
   );
 
@@ -44,10 +45,16 @@ export default function App() {
               }
               return <Entypo name={iconName} size={30} color={color} />;
             },
+            tabBarActiveTintColor: '#FF842F', // Màu khi tab được chọn
+            tabBarInactiveTintColor: '#808080', // Màu khi tab không được chọn
           })}
           initialRouteName="Home"
         >
-          <Tab.Screen name="Home" component={HomeStack} />
+          <Tab.Screen
+            name="Home"
+            component={HomeStack}
+            options={{ headerShown: false }} 
+          />
           <Tab.Screen name="Favorite" component={FavoriteItems} />
         </Tab.Navigator>
       </PaperProvider>
