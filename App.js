@@ -45,8 +45,8 @@ export default function App() {
               }
               return <Entypo name={iconName} size={30} color={color} />;
             },
-            tabBarActiveTintColor: '#FF842F', // Màu khi tab được chọn
-            tabBarInactiveTintColor: '#808080', // Màu khi tab không được chọn
+            tabBarActiveTintColor: '#FF842F', 
+            tabBarInactiveTintColor: '#808080', 
           })}
           initialRouteName="Home"
         >
