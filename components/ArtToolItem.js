@@ -1,19 +1,59 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Card, IconButton, Text, Button } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import Feather from '@expo/vector-icons/Feather';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ArtToolDetail = ({ route, navigation }) => {
     const { item } = route.params;
+    const [favoriteItem, setFavoriteItem] = useState(false);
+
+    // Hàm tải sản phẩm yêu thích từ AsyncStorage
+    const loadFavoriteStatus = async () => {
+        try {
+            const favorites = await AsyncStorage.getItem('favoriteItem');
+            const parsedFavorites = favorites ? JSON.parse(favorites) : {};
+            setFavoriteItem(parsedFavorites[item.id] || false);
+        } catch (error) {
+            console.error('Error loading favorite status:', error);
+        }
+    };
+
+    // Hàm lưu sản phẩm yêu thích vào AsyncStorage
+    const saveFavoriteItem = async (items) => {
+        try {
+            await AsyncStorage.setItem('favoriteItem', JSON.stringify(items));
+        } catch (error) {
+            console.error('Error saving favorite items:', error);
+        }
+    };
+
+    // Hàm cập nhật trạng thái yêu thích
+    const toggleFavorite = async () => {
+        const updatedFavorites = {
+            [item.id]: !favoriteItem,
+        };
+
+        setFavoriteItem(!favoriteItem); // Cập nhật trạng thái yêu thích
+        await saveFavoriteItem({ ...updatedFavorites }); // Lưu vào AsyncStorage
+    };
+
+    // Sử dụng useEffect để tải trạng thái yêu thích
+    useEffect(() => {
+        loadFavoriteStatus();
+    }, []);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-
             <View style={styles.header}>
                 <IconButton icon="arrow-left" size={24} onPress={() => navigation.goBack()} />
                 <Text style={styles.headerTitle}>Art Tool Details</Text>
-                <IconButton icon="heart-outline" size={24} onPress={() => { }} />
+                <IconButton
+                    icon={favoriteItem ? "heart" : "heart-outline"}
+                    size={24}
+                    onPress={toggleFavorite} // Thêm hàm toggleFavorite
+                    color={favoriteItem ? "red" : "gray"}
+                />
             </View>
 
             {/* Main Product Image */}
@@ -23,7 +63,6 @@ const ArtToolDetail = ({ route, navigation }) => {
 
             {/* Product Information */}
             <View style={styles.infoContainer}>
-
                 <View style={styles.rowContainer}>
                     <Text style={styles.brand}>Brand: {item.brand}</Text>
                     <View style={styles.sale}>
@@ -50,9 +89,9 @@ const ArtToolDetail = ({ route, navigation }) => {
                     labelStyle={styles.buyButtonLabel}
                     icon={() => (
                         <MaterialCommunityIcons
-                            name="shopping" // Tên icon
-                            size={20} // Kích thước của icon
-                            color="white" // Màu của icon (nếu muốn)
+                            name="shopping" 
+                            size={20} 
+                            color="white" 
                         />
                     )}
                 >
