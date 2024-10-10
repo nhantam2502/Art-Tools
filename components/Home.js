@@ -1,162 +1,225 @@
 import React, { useState, useEffect } from "react";
-import { FlatList, Pressable, View, StyleSheet, Button } from "react-native";
-import { Card, Text } from "react-native-paper";
+import { useFocusEffect } from "@react-navigation/native";
+
+import {
+  FlatList,
+  Pressable,
+  View,
+  StyleSheet,
+  Button,
+  RefreshControl,
+} from "react-native";
+import { ActivityIndicator, Card, Searchbar, Text } from "react-native-paper";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Home = ({ navigation }) => {
+  const [loading, setLoading] = useState(false);
   const [artTools, setArtTools] = useState([]);
   const [filteredArtTools, setFilteredArtTools] = useState([]);
   const [brands, setBrands] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [favoriteItem, setFavoriteItem] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Hàm lấy danh sách sản phẩm
   const getItem = async () => {
     try {
+      setLoading(true);
       const response = await fetch(
         "https://66e99bdc87e41760944a27ed.mockapi.io/api/artTools/item"
       );
+
       const json = await response.json();
       setArtTools(json);
-      setFilteredArtTools(json); // Hiển thị tất cả ban đầu
+      setFilteredArtTools(json);
 
-      // Tạo danh sách các brand từ dữ liệu artTools
       const artToolBrand = [...new Set(json.map((item) => item.brand))];
       setBrands(artToolBrand);
     } catch (error) {
-      console.error(error);
+      console.error("Lỗi fetch:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Hàm tải danh sách sản phẩm yêu thích từ AsyncStorage
   const loadFavorites = async () => {
     try {
-      const favorites = await AsyncStorage.getItem('favoriteItem');
+      const favorites = await AsyncStorage.getItem("favoriteItem");
       if (favorites) {
         setFavoriteItem(JSON.parse(favorites));
       }
     } catch (error) {
-      console.error('Error loading favorite items:', error);
+      console.error("Error loading favorite items:", error);
     }
   };
 
-  // Sử dụng useEffect để lấy dữ liệu ban đầu
-  useEffect(() => {
-    getItem();
-    loadFavorites(); 
-  }, []);
+  const saveFavoriteItem = async (items) => {
+    try {
+      const jsonValue = JSON.stringify(items);
+      await AsyncStorage.setItem("favoriteItem", jsonValue);
+    } catch (error) {
+      console.error("Error saving favorite items:", error);
+    }
+  };
 
-  // Lọc sản phẩm theo brand được chọn
+  const toggleFavorite = async (id) => {
+    const updatedFavorites = {
+      ...favoriteItem,
+      [id]: !favoriteItem[id],
+    };
+
+    setFavoriteItem(updatedFavorites);
+    await saveFavoriteItem(updatedFavorites);
+  };
+
   const filterByBrand = (brand) => {
     if (brand === selectedBrand) {
-      setSelectedBrand(null); // Xóa bộ lọc nếu brand đã được chọn
-      setFilteredArtTools(artTools); // Hiển thị tất cả sản phẩm
+      setSelectedBrand(null);
+      setFilteredArtTools(artTools);
     } else {
-      setSelectedBrand(brand); // Đặt brand đã chọn
+      setSelectedBrand(brand);
       const filtered = artTools.filter((item) => item.brand === brand);
       setFilteredArtTools(filtered);
     }
   };
 
-  // Hàm lưu sản phẩm yêu thích vào AsyncStorage
-  const saveFavoriteItem = async (items) => {
-    try {
-      await AsyncStorage.setItem('favoriteItem', JSON.stringify(items));
-    } catch (error) {
-      console.error('Error saving favorite items:', error);
+  const filterBySearch = (query) => {
+    setSearchQuery(query);
+    if (query) {
+      const filtered = artTools.filter((item) =>
+        item.artName.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredArtTools(filtered);
+    } else {
+      setFilteredArtTools(artTools);
     }
   };
 
-  // Cập nhật hàm toggleFavorite
-  const toggleFavorite = async (id) => {
-    const updatedFavorites = {
-      ...favoriteItem,
-      [id]: !favoriteItem[id], // Đảo ngược trạng thái yêu thích
-    };
+  useFocusEffect(
+    React.useCallback(() => {
+      loadFavorites();
+    }, [])
+  );
 
-    setFavoriteItem(updatedFavorites); // Cập nhật trạng thái yêu thích trong state
-    await saveFavoriteItem(updatedFavorites); // Lưu vào AsyncStorage
-  };
+  useEffect(() => {
+    getItem();
+    loadFavorites();
+  }, []);
 
-  // Hàm render footer cho FlatList
   const renderFooter = () => {
-    return (
-      <Text style={styles.noMoreText}>No more product</Text>
-    );
+    return <Text style={styles.noMoreText}>No more product</Text>;
   };
+
+  const calculatePrice = (price, limitedTimeDeal) => {
+    return (price - (price * limitedTimeDeal) / 100).toFixed(2);
+  };
+
+  const onRefresh = React.useCallback(() => {
+    setLoading(true);
+    getItem();
+    loadFavorites();
+
+    setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+  }, []);
 
   return (
     <View style={styles.container}>
-      <View style={styles.filterContainer}>
-        {brands.map((brand) => (
-          <Button
-            key={brand}
-            title={brand}
-            onPress={() => filterByBrand(brand)}
-            color={selectedBrand === brand ? "#F48E48" : "#ccc"}
-          />
-        ))}
-      </View>
-
-      <FlatList
-        data={filteredArtTools}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => navigation.navigate("ArtToolItemDetail", { item })}
-            style={styles.pressable}
-          >
-            <Card style={styles.card}>
-              <Card.Cover
-                source={{ uri: item.image }}
-                style={styles.cardImage}
+      {loading ? (
+        <ActivityIndicator size="large" color="#F48E48" />
+      ) : (
+        <>
+          <View style={styles.filterContainer}>
+            {brands.map((brand) => (
+              <Button
+                key={brand}
+                title={brand}
+                onPress={() => filterByBrand(brand)}
+                color={selectedBrand === brand ? "#F48E48" : "#ccc"}
               />
-              <Card.Content>
-                <Text variant="bodyLarge" style={styles.artName}>
-                  {item.artName}
-                </Text>
+            ))}
+          </View>
 
-                <View style={styles.priceContainer}>
-                  <Text style={styles.artPrice}>${item.price}</Text>
+          <Searchbar
+            placeholder="Search"
+            onChangeText={filterBySearch}
+            value={searchQuery}
+            style={styles.searchBar}
+          />
 
-                  {item.limitedTimeDeal > 0 && (
-                    <View style={styles.saleContainer}>
-                      <MaterialCommunityIcons
-                        name="sale"
-                        size={16}
-                        color="#F48E48"
-                      />
-                      <Text variant="bodyMedium" style={styles.saleText}>
-                        {Math.round(item.limitedTimeDeal * 100)}
+          <FlatList
+            data={filteredArtTools}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            ListFooterComponent={renderFooter}
+            refreshControl={
+              <RefreshControl loading={loading} onRefresh={onRefresh} />
+            }
+            renderItem={({ item }) => (
+              <Pressable
+                onPress={() =>
+                  navigation.navigate("ArtToolItemDetail", {
+                    item,
+                    favoriteItem,
+                  })
+                }
+                style={styles.pressable}
+              >
+                <Card style={styles.card}>
+                  <Card.Cover
+                    source={{ uri: item.image }}
+                    style={styles.cardImage}
+                  />
+                  <Card.Content>
+                    <Text variant="bodyLarge" style={styles.artName}>
+                      {item.artName}
+                    </Text>
+
+                    <View style={styles.priceContainer}>
+                      <Text style={styles.artPrice}>
+                        ${calculatePrice(item.price, item.limitedTimeDeal)}
                       </Text>
-                    </View>
-                  )}
 
-                  <Pressable onPress={() => toggleFavorite(item.id)}>
-                    <MaterialCommunityIcons
-                      name={favoriteItem[item.id] ? "heart" : "heart-outline"}
-                      size={24}
-                      color={favoriteItem[item.id] ? "red" : "gray"}
-                    />
-                  </Pressable>
-                </View>
-              </Card.Content>
-            </Card>
-          </Pressable>
-        )}
-        ListFooterComponent={renderFooter} // Thêm component footer
-      />
+                      {item.limitedTimeDeal > 0 && (
+                        <View style={styles.saleContainer}>
+                          <MaterialCommunityIcons
+                            name="sale"
+                            size={16}
+                            color="#F48E48"
+                          />
+                          <Text variant="bodyMedium" style={styles.saleText}>
+                            {Math.round(item.limitedTimeDeal * 100)}
+                          </Text>
+                        </View>
+                      )}
+
+                      <Pressable onPress={() => toggleFavorite(item.id)}>
+                        <MaterialCommunityIcons
+                          name={
+                            favoriteItem[item.id] ? "heart" : "heart-outline"
+                          }
+                          size={24}
+                          color={favoriteItem[item.id] ? "red" : "gray"}
+                        />
+                      </Pressable>
+                    </View>
+                  </Card.Content>
+                </Card>
+              </Pressable>
+            )}
+          />
+        </>
+      )}
     </View>
   );
 };
 
-// Các style cho component
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 5,
+    justifyContent: "center",
   },
   filterContainer: {
     flexDirection: "row",
@@ -164,14 +227,25 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 5,
   },
+  searchBar: {
+    backgroundColor: "#fff",
+    marginHorizontal: 5,
+    marginTop: 10,
+    marginBottom: 5,
+  },
   pressable: {
+    marginVertical: 10,
     flex: 1,
     margin: 5,
+    maxWidth: "50%",
   },
   card: {
     flex: 1,
-    marginTop: 10,
-    borderRadius: 10,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
   cardImage: {
     height: 150,
@@ -203,7 +277,7 @@ const styles = StyleSheet.create({
     color: "#F48E48",
     fontSize: 16,
   },
-  noMoreText: { 
+  noMoreText: {
     textAlign: "center",
     fontSize: 18,
     color: "#999",

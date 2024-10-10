@@ -1,12 +1,12 @@
-import { PaperProvider } from 'react-native-paper';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Entypo } from '@expo/vector-icons';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { PaperProvider } from "react-native-paper";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Entypo } from "@expo/vector-icons";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import Home from './components/Home';
-import FavoriteItems from './components/FavoriteItems';
-import ArtToolItem from './components/ArtToolItem';
+import Home from "./components/Home";
+import FavoriteItems from "./components/FavoriteItems";
+import ArtToolItem from "./components/ArtToolItem";
 
 export default function App() {
   const Tab = createBottomTabNavigator();
@@ -15,17 +15,45 @@ export default function App() {
   const HomeStack = () => (
     <Stack.Navigator>
       <Stack.Screen
-        name="HomePage"
+        name="Home Page"
         component={Home}
         options={() => ({
-          headerShown: true, // Show header on the HomePage
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: "#DD803F",
+          },
+          headerTintColor: "#fff",
         })}
       />
       <Stack.Screen
         name="ArtToolItemDetail"
         component={ArtToolItem}
         options={() => ({
-          headerShown: false, // Hide header on the detail page
+          headerShown: false,
+        })}
+      />
+    </Stack.Navigator>
+  );
+
+  const FavoriteStack = () => (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="Favorite Items"
+        component={FavoriteItems}
+        options={() => ({
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: "#DD803F",
+          },
+          headerTintColor: "#fff",
+        })}
+      />
+
+      <Stack.Screen
+        name="ArtToolItemDetail"
+        component={ArtToolItem}
+        options={() => ({
+          headerShown: false,
         })}
       />
     </Stack.Navigator>
@@ -38,24 +66,36 @@ export default function App() {
           screenOptions={({ route }) => ({
             tabBarIcon: ({ color }) => {
               let iconName;
-              if (route.name === 'Home') {
-                iconName = 'home';
-              } else if (route.name === 'Favorite') {
-                iconName = 'heart';
+              if (route.name === "Home") {
+                iconName = "home";
+              } else if (route.name === "Favorite") {
+                iconName = "heart";
               }
               return <Entypo name={iconName} size={30} color={color} />;
             },
-            tabBarActiveTintColor: '#FF842F', 
-            tabBarInactiveTintColor: '#808080', 
+            tabBarActiveTintColor: "#DD803F",
+            tabBarInactiveTintColor: "gray",
+            unmountOnBlur: true,
           })}
           initialRouteName="Home"
         >
           <Tab.Screen
             name="Home"
             component={HomeStack}
-            options={{ headerShown: false }} 
+            options={{ headerShown: false }}
           />
-          <Tab.Screen name="Favorite" component={FavoriteItems} />
+          <Tab.Screen
+            name="Favorite"
+            component={FavoriteStack}
+            options={{
+              title: "Favorite Items",
+              headerStyle: {
+                backgroundColor: "#DD803F",
+              },
+              headerTintColor: "#fff",
+              headerShown: false,
+            }}
+          />
         </Tab.Navigator>
       </PaperProvider>
     </NavigationContainer>
