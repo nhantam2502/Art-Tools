@@ -26,7 +26,7 @@ const Home = ({ navigation }) => {
     try {
       setLoading(true);
       const response = await fetch(
-        "https://66e99bdc87e41760944a27ed.mockapi.io/api/artTools/item"
+        "https://66e99bdc87e41760944a27ed.mockapi.io/api/se173455/item"
       );
 
       const json = await response.json();

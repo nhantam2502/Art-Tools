@@ -29,7 +29,7 @@ const FavoriteItems = ({ navigation }) => {
         const favoriteID = Object.keys(favorite).filter((key) => favorite[key]);
 
         const response = await fetch(
-          "https://66e99bdc87e41760944a27ed.mockapi.io/api/artTools/item"
+          "https://66e99bdc87e41760944a27ed.mockapi.io/api/se173455/item"
         );
         const allItems = await response.json();
 
