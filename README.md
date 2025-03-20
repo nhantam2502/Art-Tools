@@ -1,0 +1,1 @@
+This project allow users to manage their favorite art tools using AsyncStorage. Users can save, retrieve, and remove their favorite art tools, ensuring a personalized experience. The implementation focuses on efficient data storage and retrieval, providing seamless interaction with the favorite list.
